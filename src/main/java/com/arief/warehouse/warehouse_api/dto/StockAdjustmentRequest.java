@@ -12,4 +12,5 @@ public class StockAdjustmentRequest {
 
     @NotNull
     private Integer quantityChange;
+    private String reason;
 }

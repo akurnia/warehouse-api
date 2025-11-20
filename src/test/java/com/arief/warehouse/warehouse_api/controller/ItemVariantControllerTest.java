@@ -3,6 +3,7 @@ package com.arief.warehouse.warehouse_api.controller;
 import com.arief.warehouse.warehouse_api.dto.SellRequest;
 import com.arief.warehouse.warehouse_api.exception.GlobalExceptionHandler;
 import com.arief.warehouse.warehouse_api.exception.OutOfStockException;
+import com.arief.warehouse.warehouse_api.repository.StockMovementRepository;
 import com.arief.warehouse.warehouse_api.service.ItemVariantService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -13,11 +14,15 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import com.arief.warehouse.warehouse_api.entity.StockMovement;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
 
 @WebMvcTest(controllers = ItemVariantController.class)
 @Import(GlobalExceptionHandler.class)
@@ -31,6 +36,9 @@ class ItemVariantControllerTest {
 
     @MockitoBean
     private ItemVariantService itemVariantService;
+
+    @MockitoBean
+    private StockMovementRepository stockMovementRepository;
 
     @Test
     void sell_shouldReturn200_whenSuccess() throws Exception {
@@ -57,5 +65,18 @@ class ItemVariantControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("OUT_OF_STOCK"));
+    }
+
+    @Test
+    void getMovements_shouldReturn200WithList() throws Exception {
+        StockMovement m = new StockMovement();
+        m.setId(1L);
+
+        Mockito.when(stockMovementRepository.findByVariantIdOrderByCreatedAtDesc(1L))
+                .thenReturn(List.of(m));
+
+        mockMvc.perform(get("/api/variants/{id}/movements", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
     }
 }
