@@ -23,7 +23,6 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
@@ -36,17 +35,16 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex,
-                                                                   HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex,
+                                                             HttpServletRequest request) {
         List<String> details = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + " " + error.getDefaultMessage())
+                .map(err -> err.getField() + " " + err.getDefaultMessage())
                 .toList();
 
         ApiErrorResponse body = ApiErrorResponse.builder()
@@ -56,7 +54,6 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .details(details)
                 .build();
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
@@ -75,21 +72,18 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .details(details)
                 .build();
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex,
                                                           HttpServletRequest request) {
-
         ApiErrorResponse body = ApiErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("INTERNAL_SERVER_ERROR")
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
-
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

@@ -1,6 +1,9 @@
 package com.arief.warehouse.warehouse_api.controller;
 
+import com.arief.warehouse.warehouse_api.dto.ItemVariantCreateRequest;
+import com.arief.warehouse.warehouse_api.dto.ItemVariantResponse;
 import com.arief.warehouse.warehouse_api.dto.SellRequest;
+import com.arief.warehouse.warehouse_api.entity.StockMovement;
 import com.arief.warehouse.warehouse_api.exception.GlobalExceptionHandler;
 import com.arief.warehouse.warehouse_api.exception.OutOfStockException;
 import com.arief.warehouse.warehouse_api.repository.StockMovementRepository;
@@ -14,15 +17,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import com.arief.warehouse.warehouse_api.entity.StockMovement;
+
+import java.math.BigDecimal;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-
 
 @WebMvcTest(controllers = ItemVariantController.class)
 @Import(GlobalExceptionHandler.class)
@@ -39,6 +40,67 @@ class ItemVariantControllerTest {
 
     @MockitoBean
     private StockMovementRepository stockMovementRepository;
+
+    @Test
+    void createVariant_shouldReturn201WithBody() throws Exception {
+        Long itemId = 1L;
+
+        ItemVariantCreateRequest request = new ItemVariantCreateRequest(
+                "TSHIRT-BLACK-M",
+                "Black",
+                "M",
+                BigDecimal.valueOf(99_000),
+                20
+        );
+
+        ItemVariantResponse response = ItemVariantResponse.builder()
+                .id(10L)
+                .itemId(itemId)
+                .sku("TSHIRT-BLACK-M")
+                .color("Black")
+                .size("M")
+                .price(BigDecimal.valueOf(99_000))
+                .stockQuantity(20)
+                .build();
+
+        Mockito.when(itemVariantService.createVariant(eq(itemId), any(ItemVariantCreateRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/items/{itemId}/variants", itemId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/variants/10"))
+                .andExpect(jsonPath("$.id").value(10L))
+                .andExpect(jsonPath("$.itemId").value(itemId))
+                .andExpect(jsonPath("$.sku").value("TSHIRT-BLACK-M"));
+    }
+
+    @Test
+    void getVariantsByItem_shouldReturn200WithList() throws Exception {
+        Long itemId = 1L;
+
+        ItemVariantResponse v1 = ItemVariantResponse.builder()
+                .id(10L)
+                .itemId(itemId)
+                .sku("TSHIRT-BLACK-M")
+                .build();
+
+        ItemVariantResponse v2 = ItemVariantResponse.builder()
+                .id(11L)
+                .itemId(itemId)
+                .sku("TSHIRT-BLACK-L")
+                .build();
+
+        Mockito.when(itemVariantService.getVariantsByItem(itemId))
+                .thenReturn(List.of(v1, v2));
+
+        mockMvc.perform(get("/api/items/{itemId}/variants", itemId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(10L))
+                .andExpect(jsonPath("$[1].id").value(11L));
+    }
 
     @Test
     void sell_shouldReturn200_whenSuccess() throws Exception {

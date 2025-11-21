@@ -1,5 +1,6 @@
 package com.arief.warehouse.warehouse_api.controller;
 
+import com.arief.warehouse.warehouse_api.dto.ItemVariantUpdateRequest;
 import com.arief.warehouse.warehouse_api.dto.SellRequest;
 import com.arief.warehouse.warehouse_api.dto.StockAdjustmentRequest;
 import com.arief.warehouse.warehouse_api.entity.Item;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.*;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@ActiveProfiles("test")
 class ItemVariantControllerIntegrationTest {
 
     @Autowired
@@ -66,6 +69,62 @@ class ItemVariantControllerIntegrationTest {
     }
 
     @Test
+    void variantCrud_flow_create_list_update_delete() throws Exception {
+        Item item = new Item();
+        item.setName("T-Shirt");
+        item.setDescription("Integration test item");
+        item.setActive(true);
+        item = itemRepository.save(item);
+        Long itemId = item.getId();
+
+        String createJson = """
+            {
+              "sku": "TSHIRT-BLACK-M",
+              "color": "Black",
+              "size": "M",
+              "price": 99000.0,
+              "initialStock": 10
+            }
+            """;
+
+        String createResponse = mockMvc.perform(post("/api/items/{itemId}/variants", itemId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.itemId").value(itemId))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long variantId = objectMapper.readTree(createResponse).get("id").asLong();
+
+        mockMvc.perform(get("/api/items/{itemId}/variants", itemId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(variantId))
+                .andExpect(jsonPath("$[0].sku").value("TSHIRT-BLACK-M"));
+
+        ItemVariantUpdateRequest updateRequest = new ItemVariantUpdateRequest(
+                "TSHIRT-BLACK-M-NEW",
+                "Black",
+                "M",
+                BigDecimal.valueOf(105_000)
+        );
+        String updateJson = objectMapper.writeValueAsString(updateRequest);
+
+        mockMvc.perform(put("/api/variants/{id}", variantId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(variantId))
+                .andExpect(jsonPath("$.sku").value("TSHIRT-BLACK-M-NEW"))
+                .andExpect(jsonPath("$.price").value(105_000.0));
+
+        mockMvc.perform(delete("/api/variants/{id}", variantId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void sellVariant_success_reducesStock_andCreatesOutMovement() throws Exception {
         ItemVariant variant = createVariantWithStock(10);
         Long variantId = variant.getId();
@@ -89,7 +148,7 @@ class ItemVariantControllerIntegrationTest {
 
         assertEquals(StockMovementType.OUT, movement.getType());
         assertEquals(-3, movement.getQuantityChange());
-        assertEquals("SALE", movement.getReason()); // asumsi reason di service "SALE"
+        assertEquals("SALE", movement.getReason());
         assertNotNull(movement.getCreatedAt());
     }
 
@@ -109,7 +168,7 @@ class ItemVariantControllerIntegrationTest {
                 .andExpect(jsonPath("$.error").value("OUT_OF_STOCK"))
                 .andExpect(jsonPath("$.message", containsString("Not enough stock")))
                 .andExpect(jsonPath("$.path").value("/api/variants/" + variantId + "/sell"));
-        
+
         ItemVariant after = itemVariantRepository.findById(variantId).orElseThrow();
         assertEquals(2, after.getStockQuantity());
 

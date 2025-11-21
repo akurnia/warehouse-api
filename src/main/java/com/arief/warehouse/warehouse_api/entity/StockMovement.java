@@ -21,12 +21,12 @@ public class StockMovement extends AuditableEntity {
     private ItemVariant variant;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "type", nullable = false, length = 20)
     private StockMovementType type;
 
-    @Column(nullable = false)
+    @Column(name = "quantity_change", nullable = false)
     private Integer quantityChange;
 
-    @Column(length = 255)
+    @Column(name = "reason", length = 255)
     private String reason;
 }
