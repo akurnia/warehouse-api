@@ -149,7 +149,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sku\": \"TSHIRT-BLACK-M\",\n  \"color\": \"Black\",\n  \"size\": \"M\",\n  \"price\": 99000.0,\n  \"initialStock\": 20\n}",
+              "raw": "{\n  \"sku\": \"TSHIRT-BLACK-M-002\",\n  \"color\": \"Black\",\n  \"size\": \"M\",\n  \"price\": 99000.0,\n  \"initialStock\": 20\n}",
               "options": {
                 "raw": {
                   "language": "json"

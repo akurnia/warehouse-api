@@ -65,7 +65,7 @@ com.arief.warehouse.warehouse_api
   ├─ config        # JPA auditing configuration
   ├─ controller    # REST controllers
   ├─ dto           # Request/response DTOs
-  ├─ entity        # JPA entities + AuditableEntity
+  ├─ entity        # JPA entities
   ├─ exception     # Custom exceptions + global handler
   ├─ repository    # Spring Data JPA repositories
   ├─ service       # Service interfaces
