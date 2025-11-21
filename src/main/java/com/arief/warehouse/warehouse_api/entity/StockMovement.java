@@ -1,5 +1,6 @@
 package com.arief.warehouse.warehouse_api.entity;
 
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,17 +17,18 @@ public class StockMovement extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id", nullable = false)
+    @JsonIgnore
     private ItemVariant variant;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 20)
+    @Column(nullable = false)
     private StockMovementType type;
 
-    @Column(name = "quantity_change", nullable = false)
-    private Integer quantityChange;
+    @Column(nullable = false)
+    private int quantityChange;
 
-    @Column(name = "reason", length = 255)
+    @Column(nullable = false)
     private String reason;
 }
